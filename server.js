@@ -17,6 +17,7 @@ app.use(
       origin: [
       "http://localhost:5174",
       "https://thamlify-goqj.vercel.app",
+      "https://thamlify-7uoj.vercel.app"
     ],
      credentials: true,
   })
