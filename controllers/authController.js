@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import userModel from "../models/userModel.js";
 import jwt from "jsonwebtoken";
 import transporter from "../config/nodemiler.js";
+import otpModel from "../models/otpModel.js";
 // REGISTER
 export const register = async (req, res) => {
   const { name, email, password } = req.body;
@@ -153,136 +154,138 @@ export const logout = async (req, res) => {
 };
 
 
-export const verifyOtp = async (req, res) => {
-  const userId = req.userId;
-
-  console.log( "id",userId)
-
-  if (!userId) {
-    return res.json({ success: false, message: "Invalid userId" });
-  }
-
+ export const sendVerifyOtp = async (req, res) => {
   try {
-    const user = await userModel.findById(userId);
+    const { name, email, password } = req.body;
 
-    if (!user) {
-      return res.json({ success: false, message: "Invalid user id, try again" });
+    if (!name || !email || !password) {
+      return res.json({
+        success: false,
+        message: "All fields are required",
+      });
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000);
-    const expireOtpAt = Date.now() + 24 * 60 * 60 * 1000;
+    const existingUser = await userModel.findOne({ email });
 
-    user.verifyOtp = otp;
-    user.verifyOtpExpireAt = expireOtpAt;
-    await user.save();
+    if (existingUser) {
+      return res.json({
+        success: false,
+        message: "User already exists",
+      });
+    }
 
-    const mailOptions = {
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await otpModel.deleteMany({ email });
+
+    await otpModel.create({
+      name,
+      email,
+      password,
+      otp,
+      expiresAt: Date.now() + 10 * 60 * 1000,
+    });
+
+    await transporter.sendMail({
       from: {
-        name: "Thumblify",
+        name: "Thamlify",
         address: process.env.SENDER_EMAIL,
       },
-      to: user.email,
-      subject: "OTP Verification - Thumblify",
+      to: email,
+      subject: "OTP Verification - Thamlify",
       html: `
         <p>Your OTP for verification is:</p>
         <h2>${otp}</h2>
-        <p>This OTP is valid for 24 hours.</p>
+        <p>This OTP is valid for 10 minutes.</p>
       `,
-    };
+    });
 
-     await transporter.sendMail(mailOptions);
-    console.log("OTP sent successfully");
-
-    res.json({ success: true, message: "OTP sent to email" });
-
+    return res.json({
+      success: true,
+      message: "OTP sent to email",
+    });
   } catch (error) {
-    res.json({ success: false, message: error.message });
+    return res.json({
+      success: false,
+      message: error.message,
+    });
   }
 };
+  
 
 
 export const verifyEmail = async (req, res) => {
-  const userid =req.userId
-  const { otp } = req.body;
-
-  if (!userid || !otp) {
-    return res.json({
-      success: false,
-      message: "Please provide userId and OTP",
-    });
-  }
-
   try {
-    const user = await userModel.findById(userid);
+    const { email, otp } = req.body;
 
-    if (!user) {
+    if (!email || !otp) {
       return res.json({
         success: false,
-        message: "Invalid user id, try again",
+        message: "Email and OTP are required",
       });
     }
 
-    if (user.isAccountVerified) {
-      return res.json({
-        success: false,
-        message: "Account already verified",
-      });
-    }
+    const record = await otpModel.findOne({ email, otp });
 
-    if (!user.verifyOtp) {
-      return res.json({
-        success: false,
-        message: "OTP not found. Please request a new one",
-      });
-    }
-
-    if (user.verifyOtp.toString() !== otp.toString()) {
+    if (!record) {
       return res.json({
         success: false,
         message: "Invalid OTP",
       });
     }
 
-    if (user.verifyOtpExpireAt < Date.now()) {
+    if (record.expiresAt < Date.now()) {
+      await otpModel.deleteMany({ email });
+
       return res.json({
         success: false,
         message: "OTP expired",
       });
     }
 
-    user.isAccountVerified = true;
-    user.verifyOtp = 0;
-    user.verifyOtpExpireAt = 0;
+    const hashedPassword = await bcrypt.hash(record.password, 10);
 
-    await user.save();
-
-    res.json({
-      success: true,
-      message: "Email verified successfully",
+    const user = await userModel.create({
+      name: record.name,
+      email: record.email,
+      password: hashedPassword,
+      isAccountVerified: true,
     });
- const mailOptions = {
+
+    await otpModel.deleteMany({ email });
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    await transporter.sendMail({
       from: {
-        name: "Thumblify",
+        name: "Thamlify",
         address: process.env.SENDER_EMAIL,
       },
       to: user.email,
-      subject: "Your Thumblify Account Has Been Verified 🎉",
+      subject: "Welcome to Thamlify 🎉",
       html: `
-        <h2>Hello</h2>
-        <h2>🎉 Your email has been successfully verified!</h2>
-        <p>Welcome to Thumblify. Your account is now fully activated, and you
-         can start using all features without any limitations.</p>
-         <p>We’re excited to have you on board and can’t wait to see what you create with Thumblify.</p>
+        <h2>Hello ${user.name}</h2>
+        <h2>🎉 Your account has been created successfully!</h2>
+        <p>Welcome to Thamlify. You can now start generating AI thumbnails.</p>
+      `,
+    });
 
-         <p>warm regards,</p>
-         <p>The Thumblify Team</p>
-       `
-    };
-
-await transporter.sendMail(mailOptions);
-    console.log("OTP sent successfully");
+    return res.json({
+      success: true,
+      message: "Account created successfully",
+      user,
+    });
   } catch (error) {
-    res.json({
+    return res.json({
       success: false,
       message: error.message,
     });
