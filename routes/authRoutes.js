@@ -8,7 +8,7 @@ import userAuth from "../middleware/userAuth.js";
 authRouter.post('/register',register);
 authRouter.post('/login',login)
 authRouter.post('/logout',logout)
-authRouter.post('/send-verify-otp', userAuth ,verifyOtp)
+authRouter.post('/send-verify-otp', verifyOtp)
 authRouter.post('/verifyEmail',userAuth ,verifyEmail)
 authRouter.post('/send-resetotp', passwordResetOtp)
 authRouter.post("/resetPasswordVerify" ,resetPasswordVerify)
