@@ -164,6 +164,7 @@ export const logout = async (req, res) => {
         message: "All fields are required",
       });
     }
+    console.log("1. Request received");
 
     const existingUser = await userModel.findOne({ email });
 
@@ -177,7 +178,7 @@ export const logout = async (req, res) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
     await otpModel.deleteMany({ email });
-
+console.log("2. User checked");
     await otpModel.create({
       name,
       email,
@@ -185,8 +186,9 @@ export const logout = async (req, res) => {
       otp,
       expiresAt: Date.now() + 10 * 60 * 1000,
     });
+console.log("4. OTP saved");
 
-    await transporter.sendMail({
+  await transporter.sendMail({
       from: {
         name: "Thamlify",
         address: process.env.SENDER_EMAIL,
@@ -199,7 +201,7 @@ export const logout = async (req, res) => {
         <p>This OTP is valid for 10 minutes.</p>
       `,
     });
-
+console.log("5. Email sent");
     return res.json({
       success: true,
       message: "OTP sent to email",

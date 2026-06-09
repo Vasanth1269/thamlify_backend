@@ -18,7 +18,7 @@ app.use(
       "http://localhost:5174",
       "https://thamlify-goqj.vercel.app",
       "https://thamlify-7uoj.vercel.app",
-      "https://thamlify-fn3p.vercel.app/"
+      "https://thamlify-fn3p.vercel.app"
     ],
      credentials: true,
   })
