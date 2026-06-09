@@ -188,7 +188,7 @@ console.log("2. User checked");
     });
 console.log("4. OTP saved");
 
-  await transporter.sendMail({
+  /*await transporter.sendMail({
       from: {
         name: "Thamlify",
         address: process.env.SENDER_EMAIL,
@@ -200,11 +200,11 @@ console.log("4. OTP saved");
         <h2>${otp}</h2>
         <p>This OTP is valid for 10 minutes.</p>
       `,
-    });
+    });*/
 console.log("5. Email sent");
     return res.json({
       success: true,
-      message: "OTP sent to email",
+      message: "OTP sent to email OTP sKIped !!!",
     });
   } catch (error) {
     return res.json({
