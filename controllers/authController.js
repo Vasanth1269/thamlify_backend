@@ -201,16 +201,27 @@ console.log("4. OTP saved");
         <p>This OTP is valid for 10 minutes.</p>
       `,
     });*/
+    console.log("SMTP_USER:", process.env.SMTP_USER);
+console.log("SMTP_PASS exists:", Boolean(process.env.SMTP_PASS));
+console.log("SENDER_EMAIL:", process.env.SENDER_EMAIL);
+
+await transporter.verify();
+console.log("SMTP verified");
+
+await transporter.sendMail(mailOptions);
+console.log("OTP email sent");
 console.log("5. Email sent");
     return res.json({
       success: true,
       message: "OTP sent to email OTP sKIped !!!",
     });
   } catch (error) {
-    return res.json({
-      success: false,
-      message: error.message,
-    });
+   console.log("Send OTP Error:", error);
+return res.status(500).json({
+  success: false,
+  message: error.message,
+  code: error.code,
+});
   }
 };
   
