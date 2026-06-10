@@ -164,7 +164,7 @@ export const logout = async (req, res) => {
         message: "All fields are required",
       });
     }
-    console.log("1. Request received");
+   
 
     const existingUser = await userModel.findOne({ email });
 
@@ -178,7 +178,6 @@ export const logout = async (req, res) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
     await otpModel.deleteMany({ email });
-console.log("2. User checked");
     await otpModel.create({
       name,
       email,
@@ -201,18 +200,12 @@ console.log("4. OTP saved");
     <p>This OTP is valid for 10 minutes.</p>
   `,
 };
-    console.log("SMTP_USER:", process.env.SMTP_USER);
-console.log("SMTP_PASS exists:", Boolean(process.env.SMTP_PASS));
-console.log("SENDER_EMAIL:", process.env.SENDER_EMAIL);
-
-console.log("SMTP verified");
-
+ 
 await transporter.sendMail(mailOptions);
-console.log("OTP email sent");
 
-    return res.json({
+  return res.json({
       success: true,
-      message: "OTP sent to email OTP sKIped !!!",
+      message: "OTP sent to email ",
     });
   } catch (error) {
    console.log("Send OTP Error:", error);
@@ -255,6 +248,18 @@ export const verifyEmail = async (req, res) => {
       });
     }
 
+    // safety check
+    const existingUser = await userModel.findOne({ email });
+
+    if (existingUser) {
+      await otpModel.deleteMany({ email });
+
+      return res.json({
+        success: false,
+        message: "User already exists. Please login.",
+      });
+    }
+
     const hashedPassword = await bcrypt.hash(record.password, 10);
 
     const user = await userModel.create({
@@ -275,20 +280,6 @@ export const verifyEmail = async (req, res) => {
       secure: true,
       sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
-    await transporter.sendMail({
-      from: {
-        name: "Thamlify",
-        address: process.env.SENDER_EMAIL,
-      },
-      to: user.email,
-      subject: "Welcome to Thamlify 🎉",
-      html: `
-        <h2>Hello ${user.name}</h2>
-        <h2>🎉 Your account has been created successfully!</h2>
-        <p>Welcome to Thamlify. You can now start generating AI thumbnails.</p>
-      `,
     });
 
     return res.json({
