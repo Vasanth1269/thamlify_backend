@@ -188,24 +188,23 @@ console.log("2. User checked");
     });
 console.log("4. OTP saved");
 
-  /*await transporter.sendMail({
-      from: {
-        name: "Thamlify",
-        address: process.env.SENDER_EMAIL,
-      },
-      to: email,
-      subject: "OTP Verification - Thamlify",
-      html: `
-        <p>Your OTP for verification is:</p>
-        <h2>${otp}</h2>
-        <p>This OTP is valid for 10 minutes.</p>
-      `,
-    });*/
+  const mailOptions = {
+  from: {
+    name: "Thamlify",
+    address: process.env.SENDER_EMAIL,
+  },
+  to: email,
+  subject: "OTP Verification - Thamlify",
+  html: `
+    <p>Your OTP for verification is:</p>
+    <h2>${otp}</h2>
+    <p>This OTP is valid for 10 minutes.</p>
+  `,
+};
     console.log("SMTP_USER:", process.env.SMTP_USER);
 console.log("SMTP_PASS exists:", Boolean(process.env.SMTP_PASS));
 console.log("SENDER_EMAIL:", process.env.SENDER_EMAIL);
 
-await transporter.verify();
 console.log("SMTP verified");
 
 await transporter.sendMail(mailOptions);
