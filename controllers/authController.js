@@ -210,7 +210,7 @@ console.log("SMTP verified");
 
 await transporter.sendMail(mailOptions);
 console.log("OTP email sent");
-console.log("5. Email sent");
+
     return res.json({
       success: true,
       message: "OTP sent to email OTP sKIped !!!",
